@@ -1,0 +1,94 @@
+from urllib.request import urlopen as uReq
+from bs4 import BeautifulSoup as soup
+import sqlite3
+import pandas as pd
+
+# Creating the db
+conn = sqlite3.connect('test.db')
+cursor = conn.cursor()
+
+# Removing duplicate tables
+cursor.execute("DROP TABLE IF EXISTS PRODUCTS")
+
+# Creating table
+cursor.execute('''CREATE TABLE products(
+    brand TEXT,
+    product_name TEXT,
+    shipping TEXT,
+    price REAL
+) ''')
+
+# Creating the url to be scraped
+my_url = 'https://www.newegg.com/p/pl?d=ram+&page=33'
+
+# Grabbing the URL
+uClient = uReq(my_url)
+
+# Assign html client to variable
+ram_html = uClient.read()
+
+# Close the client
+uClient.close()
+
+# Parsing the html, and closing the client connection
+ram_soup = soup(ram_html, "html.parser")
+
+# Grabbing each product
+containers = ram_soup.findAll("div", {"class": "item-container"})
+
+# Creating the csv file
+out_filename = "Newegg_RAM_Price_Fix.csv"
+
+# Creating the headers for the csv file
+headers = "brand, product_name, shipping, price\n"
+
+# Opening the file and write to it
+f = open(out_filename, "w")
+f.write(headers)
+
+# Iterate over each product and grabe the information you want
+for container in containers:
+
+    # Create a container to scrape the brand from the html and assign it to a variable
+    try:
+        brand_container = container.findAll("a", {"class": "item-brand"})
+        brand = brand_container[0].img["title"]
+    except IndexError:
+        continue
+
+    # Create a container to scrape the product name from the html and assign it to a variable
+    title_container = container.findAll("a", {"class": "item-title"})
+    product_name = title_container[0].text
+
+    # Create a container to scrape the shipping cost from the html and assign it to a variable
+    shipping_container = container.findAll("li", {"class": "price-ship"})
+    shipping = shipping_container[0].text.strip()
+
+    # Create a container to scrape the price of the RAM from the html and assign it to a variable
+    try:
+        price_container = container.findAll("li", {"class": "price-current"})
+        price = price_container[0].strong.text + price_container[0].sup.text
+    except AttributeError:
+        continue
+
+    # Insert info into db
+    cursor.execute('''INSERT INTO products VALUES(?,?,?,?)''', (brand, product_name, shipping, price))
+
+    # Write the products to the csv file
+    f.write(product_name.replace(",", "")  + "," +
+            brand.replace(",", "") + "," + shipping + "," + price.replace(",", "") + "\n")
+
+
+conn.commit()
+
+# Close the csv file
+f.close()
+
+print("complete......")
+
+# cursor.execute('''SELECT * FROM products''')
+# results = cursor.fetchall()
+results = pd.read_sql_query("SELECT * FROM products", conn)
+print(results)
+
+conn.close()

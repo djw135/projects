@@ -1,0 +1,70 @@
+from time import sleep
+from random import randint
+import numpy as np
+from urllib.request import urlopen as uReq
+from bs4 import BeautifulSoup as soup
+
+# Creating the csv file
+filename = "Newegg_GPU_loop.csv"
+headers = "brand, product_name, shipping, price\n"
+f = open(filename, "w")
+f.write(headers)
+
+# Starts at page 1 ends at page 101 and moves 1 page at a time. Ends at 100+1 because arange excludes the end point
+pages = np.arange(1, 101, 1)
+
+# For loop to iterate through each page
+for page in pages:
+
+    # Creating the url to be scraped
+    my_url = 'https://www.newegg.com/p/pl?d=gpu&page='+ str(page)
+
+    # Grabbing the URL
+    uClient = uReq(my_url)
+
+    # Assign html client to variable
+    ram_html = uClient.read()
+
+    # Close the client
+    uClient.close()
+
+    # Parsing the html, and closing the client connection
+    ram_soup = soup(ram_html, "html.parser")
+
+    # Grabbing each product
+    containers = ram_soup.findAll("div", {"class": "item-container"})
+
+    # Grabs a random int for sleeping to avoid IP ban
+    sleep(randint(3,10))
+
+    # Iterate over each product and grabe the information you want
+    for container in containers:
+
+        # Create a container to scrape the brand from the html and assign it to a variable
+        try:
+            brand_container = container.find_all("a", {"class": "item-brand"})
+            brand = brand_container[0].img["title"]
+        except IndexError:
+            continue
+
+        # Create a container to scrape the product name from the html and assign it to a variable
+        title_container = container.findAll("a", {"class": "item-title"})
+        product_name = title_container[0].text
+
+        # Create a container to scrape the shipping cost from the html and assign it to a variable
+        shipping_container = container.findAll("li", {"class": "price-ship"})
+        shipping = shipping_container[0].text.strip()
+
+        # Create a container to scrape the price of the RAM from the html and assign it to a variable
+        try:
+            price_container = container.findAll("li", {"class": "price-current"})
+            price = price_container[0].strong.text + price_container[0].sup.text
+        except AttributeError:
+            continue
+
+        # Write the products to the csv file
+        f.write(product_name.replace(",", "") + "," +
+                brand.replace(",", "") + "," + shipping + "," + price.replace(",", "") + "\n")
+
+# Close the file
+f.close()

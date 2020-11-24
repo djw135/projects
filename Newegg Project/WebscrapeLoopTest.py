@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup as soup
 from urllib.request import urlopen as uReq
 
 # Creating a db
-conn = sqlite3.connect('product.db')
+conn = sqlite3.connect('Newegg_Products.db')
 cursor = conn.cursor()
 
 def create_Table(table_name: str):

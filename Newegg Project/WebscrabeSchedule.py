@@ -1,6 +1,6 @@
 import numpy as np
 import sqlite3
-import schedule
+# import schedule
 import time
 import pandas as pd
 from time import sleep
@@ -25,10 +25,10 @@ cursor.execute('''CREATE TABLE products(
 ) ''')
 
 # Creating a funtion to handle the webscraping
-def getData():
+def getData(url):
 
     # Setting up URL to be scrape data from
-    my_url = 'https://www.newegg.com/p/pl?d=ram+&page=33'
+    my_url = url
     uClient = uReq(my_url)
     ram_html = uClient.read()
     uClient.close()
@@ -62,17 +62,18 @@ def getData():
     
     return
 
+
 # Calling the function
-getData()
+getData('https://www.newegg.com/p/pl?d=ram+&page=33')
 
 conn.commit()
 results = pd.read_sql_query("SELECT * FROM products", conn)
 print(results)
 
-schedule.every().friday.at('14:20').do(getData)
-
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+# schedule.every().friday.at('14:20').do(getData)
+# 
+# while True:
+#     schedule.run_pending()
+#     time.sleep(1)
     
 conn.close()

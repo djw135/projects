@@ -8,25 +8,23 @@ from random import randint
 from urllib.request import urlopen as uReq
 from bs4 import BeautifulSoup as soup
 
-
-# Creating a database
+# Creating a database and connection
 conn = sqlite3.connect('tester.db')
 cursor = conn.cursor()
 
-# Dropping duplicate table
-cursor.execute("DROP TABLE IF EXISTS PRODUCTS")
+def create_Table(table_name: str):
+    
+    info = '''CREATE TABLE {} (
+        brand TEXT,
+        product_name TEXT,
+        shipping TEXT,
+        price REAL
+    )'''.format(table_name)
+    cursor.execute("DROP TABLE IF EXISTS {}".format(table_name))
+    cursor.execute(info)
+    return info
 
-# Creating database table
-cursor.execute('''CREATE TABLE products(
-    brand TEXT,
-    product_name TEXT,
-    shipping TEXT,
-    price REAL
-) ''')
-
-# Creating a funtion to handle the webscraping
-
-def getData(url):
+def get_Data(url, table_name):
 
     # Setting up URL to be scrape data from
     my_url = url
@@ -36,6 +34,7 @@ def getData(url):
     ram_soup = soup(ram_html, "html.parser")
     containers = ram_soup.findAll("div", {"class": "item-container"})
 
+    data_insert = []
     # Iterating over the products on the page and scraping the information requested
     for container in containers:
 
@@ -54,23 +53,34 @@ def getData(url):
         try:
             price_container = container.findAll(
                 "li", {"class": "price-current"})
-            price = price_container[0].strong.text + 
-                price_container[0].sup.text
+            price = price_container[0].strong.text + price_container[0].sup.text
         except AttributeError:
             continue
 
         # Storing information into a database
-        cursor.execute('''INSERT INTO products VALUES(?,?,?,?)''',
-                       (brand, product_name, shipping, price))
+        data_insert.append((brand, product_name, shipping, price))
 
-    return
+    return data_insert
 
+def insert_data(stored_data, table_name):
+    for item in stored_data:
+        cursor.execute('''INSERT INTO {} VALUES(?, ?, ?, ?)'''.format(table_name), item)
 
-# Calling the function
-getData('https://www.newegg.com/p/pl?d=ram+&page=33')
+def run():
+    table_name = "RAM"
+    create_Table(table_name)
 
-conn.commit()
-results = pd.read_sql_query("SELECT * FROM products", conn)
-print(results)
+    # Calling the function
+    stored_data = get_Data('https://www.newegg.com/p/pl?d=ram+&page=33', table_name)
+    insert_data(stored_data, table_name)
+    print("Complete.")
 
-conn.close()
+    conn.commit()
+    # results = pd.read_sql_query("SELECT * FROM products", conn)
+    # print(results)
+
+    conn.close()
+
+if __name__ == '__main__':
+    run()
+    

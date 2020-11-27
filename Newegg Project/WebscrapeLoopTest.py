@@ -8,6 +8,7 @@ from urllib.request import urlopen as uReq
 conn = sqlite3.connect('Newegg_Products.db')
 cursor = conn.cursor()
 
+# Creating a table function that creates tables for the searched items to be stored in
 def create_Table(table_name: str):
     info = '''CREATE TABLE {} (
         brand TEXT,
@@ -21,10 +22,10 @@ def create_Table(table_name: str):
 
 # Creating the webscrape funtion
 def get_Data(table_name):
-# Set start page, ending page, and page increments/steps
+    # Set start page, ending page, and page increments/steps
     pages = range(1, 4)
 
-    # For loop to iterate through each page
+    # For loop to iterate through each page 
     url = 'https://www.newegg.com/p/pl?d={}&page='.format(table_name)
     for page in pages:
         my_url = url + str(page)
@@ -37,7 +38,7 @@ def get_Data(table_name):
 
         # Making a list to store the items
         data_insert = []
-        # Iterate over each product and grabe the information you want
+        # Iterate over each product and grab the information you want
         for container in containers:
             try:
                 brand_container = container.find_all("a", {"class": "item-brand"})
@@ -62,10 +63,12 @@ def get_Data(table_name):
 
     return data_insert
 
+# creating the insert data function that inserts the scraped data into the database
 def insert_data(stored_data, table_name):
     for item in stored_data:
         cursor.execute('''INSERT INTO {} VALUES(?, ?, ?, ?)'''.format(table_name), item)
 
+# Run function to call all the functions and print when done
 def run():
     table_names = ["ram", "cpu", "ssd", "gpu"]
     for table_name in table_names:
@@ -77,6 +80,7 @@ def run():
     conn.commit()
     conn.close()
 
+# Main
 if __name__ == '__main__':
     run()
     

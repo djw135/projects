@@ -15,9 +15,9 @@ cursor = conn.cursor()
 
 def create_table(table_name: str):
     """
-
-    :param table_name:
-    :return:
+    A function to create a DB table for storing parsed data
+    :param table_name: str, The DB table created for the product data
+    :return: Void
     """
     query = """
         CREATE TABLE {} (
@@ -31,6 +31,11 @@ def create_table(table_name: str):
 
 
 def get_page_data(table_name: str) -> List:
+    """
+    A function to grab multiple pages of product data form the URL
+    :param table_name: str, The DB table created for product data
+    :return: List[], the list of product data obtained from the URL
+    """
     page_data: List = []
     for page in range(1, 2):
         url: str = 'https://www.newegg.com/p/pl?d={}&page={}'.format(table_name, page)
@@ -67,6 +72,11 @@ def get_product_price(container) -> str:
 
 
 def process_page_data(page_data: List[str]) -> List[Tuple[Any]]:
+    """
+    A function to parse data and store the product data in corresponding containers
+    :param page_data: List[str], a list of product data from the URL
+    :return: List[Tuple[Any]],
+    """
     processed_data: List[Tuple[Any]] = []
     for item in page_data:
         ram_soup = soup(item, "html.parser")
@@ -81,6 +91,12 @@ def process_page_data(page_data: List[str]) -> List[Tuple[Any]]:
 
 
 def insert_data(stored_data, table_name):
+    """
+    A function to take parsed product data and store into the DB
+    :param stored_data:
+    :param table_name: The DB table created for the product data
+    :return: Void
+    """
     for item in stored_data:
         cursor.execute('''INSERT INTO {} VALUES(?, ?, ?, ?)'''.format(table_name), item)
 

@@ -103,7 +103,8 @@ def process_page_data(page_data: List[str]) -> List[Tuple[Any]]:
     processed_data: List[Tuple[Any]] = []
     for item in page_data:
         ram_soup = soup(item, "html.parser")
-        containers = ram_soup.findAll("div", {"class": "item-container"})
+        list_wrap = ram_soup.find("div", {"class": "list-wrap"})
+        containers = list_wrap.findAll("div", {"class": "item-container"})
         for container in containers:
             brand: Optional[str] = get_brand_name(container=container)
             product_name: str = get_product_name(container=container)
